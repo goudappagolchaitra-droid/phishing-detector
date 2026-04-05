@@ -105,7 +105,6 @@ python-slugify==8.0.4
 python-socketio==5.16.0
 pyttsx3==2.99
 pytz==2025.2
-pywin32==311
 pywinpty==3.0.3
 PyYAML==6.0.3
 pyzmq==27.1.0

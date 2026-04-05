@@ -42,6 +42,7 @@ def home():
 
 @app.post("/check")
 def check_url(request: URLRequest):
+    global model
     features = extract_features(request.url)
     df_input = pd.DataFrame([features])
     result = model.predict(df_input)[0]

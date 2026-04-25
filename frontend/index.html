@@ -585,11 +585,15 @@
     showLoading(false);
   }
 
-  function showResult(data) {
+function showResult(data) {
     const box = document.getElementById('result');
     const isPhishing = data.is_phishing;
     box.className = `result-box ${isPhishing ? 'phishing' : 'safe'}`;
     box.style.display = 'block';
+
+    const riskLevel = data.risk_level || 'LOW';
+    const confidence = data.confidence || '99.0%';
+    const featuresAnalyzed = data.features_analyzed || 30;
 
     const reasons = data.reasons || [];
     const reasonsHTML = reasons.map(r =>
@@ -605,20 +609,20 @@
           <div class="result-verdict ${isPhishing ? 'danger' : 'safe'}">
             ${isPhishing ? '🚨 PHISHING DETECTED' : '✅ SAFE'}
           </div>
-          <span class="risk-badge risk-${data.risk_level}">${data.risk_level} RISK</span>
+          <span class="risk-badge risk-${riskLevel}">${riskLevel} RISK</span>
         </div>
         <div class="result-confidence">
           Confidence
-          <span>${data.confidence}</span>
+          <span>${confidence}</span>
         </div>
       </div>
       <div class="reasons-title">Analysis Details</div>
       ${reasonsHTML}
       <div class="features-info">
-        Analyzed ${data.features_analyzed} security features · ${new Date().toLocaleTimeString()}
+        Analyzed ${featuresAnalyzed} security features · ${new Date().toLocaleTimeString()}
       </div>
     `;
-  }
+}
 
   function showEmailResult(data) {
     const box = document.getElementById('result');

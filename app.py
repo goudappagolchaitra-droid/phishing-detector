@@ -12,8 +12,6 @@ import time
 VIRUSTOTAL_API_KEY = "f9c2f725adab651cfe7b497f8e2f073c03eb45dcaae0b006c93e6c3e546b104d"
 
 
-VIRUSTOTAL_API_KEY = "paste_your_api_key_here"
-
 def check_virustotal(url):
     try:
         headers = {"x-apikey": VIRUSTOTAL_API_KEY}
@@ -94,6 +92,23 @@ def check_url(request: URLRequest):
         url = request.url.strip()
         if not url:
             raise HTTPException(status_code=400, detail="URL is empty")
+        import urllib.parse
+        parsed = urllib.parse.urlparse(url)
+        domain = parsed.netloc.replace('www.', '')
+        is_trusted = any(domain == td or domain.endswith('.' + td) 
+                        for td in TRUSTED_DOMAINS)
+        if is_trusted:
+            return {
+                "url": url,
+                "result": "SAFE",
+                "confidence": "99.0%",
+                "risk_level": "LOW",
+                "is_phishing": False,
+                "reasons": ["Verified trusted domain"],
+                "features_analyzed": 30,
+                "virustotal": None,
+                "scanned_at": datetime.now().isoformat()
+            }
 
         # Extract 30+ features
         features = extract_features(url)
@@ -104,6 +119,11 @@ def check_url(request: URLRequest):
         proba = model.predict_proba(df_input)[0]
         confidence = proba[result] * 100
 
+        # VirusTotal check
+        vt_result = check_virustotal(url)
+        if vt_result and vt_result["is_malicious"]:
+            result = 1
+
         # Risk level
         if confidence >= 90:
             risk = "HIGH" if result == 1 else "LOW"
@@ -112,7 +132,7 @@ def check_url(request: URLRequest):
         else:
             risk = "LOW"
 
-        # Key reasons why it's phishing
+        # Reasons
         reasons = []
         if features['has_ip']:
             reasons.append("Contains IP address instead of domain")
@@ -128,6 +148,8 @@ def check_url(request: URLRequest):
             reasons.append("Too many subdomains")
         if features['has_encoded_chars']:
             reasons.append("Encoded characters detected")
+        if vt_result and vt_result["malicious"] > 0:
+            reasons.append(f"Flagged by {vt_result['malicious']} security engines")
 
         response = {
             "url": url,
@@ -137,10 +159,10 @@ def check_url(request: URLRequest):
             "is_phishing": bool(result),
             "reasons": reasons if result == 1 else ["No threats detected"],
             "features_analyzed": len(FEATURE_NAMES),
+            "virustotal": vt_result,
             "scanned_at": datetime.now().isoformat()
         }
 
-        # Save to history
         scan_history.append(response)
         if len(scan_history) > 100:
             scan_history.pop(0)

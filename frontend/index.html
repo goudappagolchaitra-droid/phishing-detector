@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Phishing Detector</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0a0e1a;
+    color: #e0e6ff;
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    background: #0d1224;
+    border-bottom: 1px solid #1e2a4a;
+    padding: 16px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-size: 22px;
+    font-weight: 700;
+    color: #4f8eff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: #4f8eff22;
+    border: 1px solid #4f8eff55;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .nav-links { display: flex; gap: 30px; }
+  .nav-links a {
+    color: #8899cc;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+    cursor: pointer;
+  }
+  .nav-links a:hover { color: #4f8eff; }
+  .nav-status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #4cff91;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    background: #4cff91;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 80px 20px 40px;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: #4f8eff15;
+    border: 1px solid #4f8eff40;
+    color: #4f8eff;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: 52px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffffff, #4f8eff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .hero p {
+    color: #8899cc;
+    font-size: 18px;
+    max-width: 500px;
+    margin: 0 auto 40px;
+    line-height: 1.6;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .tab {
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: 1px solid #1e2a4a;
+    background: transparent;
+    color: #8899cc;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: #4f8eff;
+    border-color: #4f8eff;
+    color: white;
+  }
+  .tab:hover:not(.active) {
+    border-color: #4f8eff55;
+    color: #4f8eff;
+  }
+
+  /* SCANNER CARD */
+  .scanner-card {
+    max-width: 700px;
+    margin: 0 auto 40px;
+    background: #0d1224;
+    border: 1px solid #1e2a4a;
+    border-radius: 16px;
+    padding: 32px;
+  }
+  .input-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .input-group input, .input-group textarea {
+    flex: 1;
+    background: #070c18;
+    border: 1px solid #1e2a4a;
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: #e0e6ff;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  .input-group input:focus,
+  .input-group textarea:focus {
+    border-color: #4f8eff;
+  }
+  .input-group input::placeholder,
+  .input-group textarea::placeholder {
+    color: #4a5580;
+  }
+  .btn-scan {
+    background: #4f8eff;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-scan:hover { background: #3a7aff; transform: translateY(-1px); }
+  .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* EMAIL FORM */
+  .email-form { display: none; }
+  .email-form.active { display: block; }
+  .url-form.hidden { display: none; }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .form-row input {
+    background: #070c18;
+    border: 1px solid #1e2a4a;
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #e0e6ff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  .form-row input:focus { border-color: #4f8eff; }
+  .email-body {
+    width: 100%;
+    background: #070c18;
+    border: 1px solid #1e2a4a;
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #e0e6ff;
+    font-size: 14px;
+    outline: none;
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  .email-body:focus { border-color: #4f8eff; }
+
+  /* RESULT */
+  .result-box {
+    display: none;
+    margin-top: 20px;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .result-box.phishing {
+    background: #ff4f4f10;
+    border-color: #ff4f4f40;
+  }
+  .result-box.safe {
+    background: #4cff9110;
+    border-color: #4cff9140;
+  }
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .result-verdict {
+    font-size: 24px;
+    font-weight: 800;
+  }
+  .result-verdict.danger { color: #ff4f4f; }
+  .result-verdict.safe { color: #4cff91; }
+  .result-confidence {
+    font-size: 13px;
+    color: #8899cc;
+    text-align: right;
+  }
+  .result-confidence span {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    color: #e0e6ff;
+  }
+  .risk-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .risk-HIGH { background: #ff4f4f25; color: #ff4f4f; border: 1px solid #ff4f4f40; }
+  .risk-MEDIUM { background: #ffaa0025; color: #ffaa00; border: 1px solid #ffaa0040; }
+  .risk-LOW { background: #4cff9125; color: #4cff91; border: 1px solid #4cff9140; }
+  .reasons-title {
+    font-size: 13px;
+    color: #8899cc;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .reason-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #ffffff08;
+    font-size: 14px;
+  }
+  .reason-icon { font-size: 16px; }
+  .features-info {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #ffffff10;
+    font-size: 12px;
+    color: #4a5580;
+  }
+
+  /* STATS SECTION */
+  .stats-grid {
+    max-width: 1000px;
+    margin: 0 auto 60px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 0 20px;
+  }
+  .stat-card {
+    background: #0d1224;
+    border: 1px solid #1e2a4a;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 36px;
+    font-weight: 800;
+    color: #4f8eff;
+    margin-bottom: 8px;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: #8899cc;
+  }
+
+  /* HISTORY */
+  .history-section {
+    max-width: 1000px;
+    margin: 0 auto 60px;
+    padding: 0 20px;
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #e0e6ff;
+  }
+  .history-table {
+    background: #0d1224;
+    border: 1px solid #1e2a4a;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .history-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #1e2a4a;
+    align-items: center;
+    font-size: 14px;
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-row.header {
+    background: #070c18;
+    font-size: 12px;
+    color: #4a5580;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .history-url {
+    color: #8899cc;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 400px;
+  }
+  .badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .badge.phishing {
+    background: #ff4f4f20;
+    color: #ff4f4f;
+  }
+  .badge.safe {
+    background: #4cff9120;
+    color: #4cff91;
+  }
+  .history-time { color: #4a5580; font-size: 12px; }
+  .history-conf { color: #8899cc; }
+  .empty-history {
+    text-align: center;
+    padding: 40px;
+    color: #4a5580;
+  }
+
+  /* LOADING */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: #4f8eff;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid #1e2a4a;
+    border-top-color: #4f8eff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 40px;
+    color: #4a5580;
+    font-size: 13px;
+    border-top: 1px solid #1e2a4a;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 32px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .input-group { flex-direction: column; }
+    .nav-links { display: none; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <div class="logo-icon">🛡</div>
+    PhishGuard AI
+  </div>
+  <div class="nav-links">
+    <a onclick="scrollToScanner()">Scanner</a>
+    <a onclick="scrollToHistory()">History</a>
+    <a href="http://127.0.0.1:8000/docs" target="_blank">API Docs</a>
+  </div>
+  <div class="nav-status">
+    <div class="dot"></div>
+    AI Engine Online
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">Powered by Machine Learning</div>
+  <h1>Detect Phishing<br>Before It's Too Late</h1>
+  <p>Real-time AI analysis of URLs and emails using 30+ security features</p>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('url')">Check URL</button>
+    <button class="tab" onclick="switchTab('email')">Check Email</button>
+  </div>
+
+  <!-- SCANNER -->
+  <div class="scanner-card" id="scanner">
+
+    <!-- URL FORM -->
+    <div class="url-form" id="urlForm">
+      <div class="input-group">
+        <input type="text" id="urlInput"
+          placeholder="Enter URL to scan (e.g. http://suspicious-site.xyz)"
+          onkeydown="if(event.key==='Enter') checkURL()"/>
+        <button class="btn-scan" onclick="checkURL()" id="urlBtn">
+          Scan URL
+        </button>
+      </div>
+    </div>
+
+    <!-- EMAIL FORM -->
+    <div class="email-form" id="emailForm">
+      <div class="form-row">
+        <input type="text" id="emailSender" placeholder="Sender email (optional)"/>
+        <input type="text" id="emailSubject" placeholder="Email subject"/>
+      </div>
+      <textarea class="email-body" id="emailBody"
+        placeholder="Paste email body here..."></textarea>
+      <button class="btn-scan" onclick="checkEmail()" id="emailBtn"
+        style="width:100%">Analyze Email</button>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      Analyzing with AI...
+    </div>
+
+    <!-- RESULT -->
+    <div class="result-box" id="result"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-grid" id="statsGrid">
+  <div class="stat-card">
+    <div class="stat-number" id="statTotal">0</div>
+    <div class="stat-label">Total Scans</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number" id="statPhishing" style="color:#ff4f4f">0</div>
+    <div class="stat-label">Phishing Detected</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number" id="statSafe" style="color:#4cff91">0</div>
+    <div class="stat-label">Safe URLs</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number" id="statFeatures">30</div>
+    <div class="stat-label">Features Analyzed</div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="history-section" id="historySection">
+  <div class="section-title">Recent Scans</div>
+  <div class="history-table">
+    <div class="history-row header">
+      <div>URL / Content</div>
+      <div>Result</div>
+      <div>Confidence</div>
+      <div>Time</div>
+    </div>
+    <div id="historyList">
+      <div class="empty-history">No scans yet. Start scanning above!</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  PhishGuard AI — Built with Machine Learning · 30+ Security Features · Real-time Detection
+</footer>
+
+<script>
+  const API = 'http://127.0.0.1:8000';
+  let scanHistory = [];
+  let currentTab = 'url';
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'url') || (i === 1 && tab === 'email'));
+    });
+    document.getElementById('urlForm').classList.toggle('hidden', tab !== 'url');
+    document.getElementById('emailForm').classList.toggle('active', tab === 'email');
+    document.getElementById('result').style.display = 'none';
+  }
+
+  async function checkURL() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) { alert('Please enter a URL'); return; }
+    showLoading(true);
+    try {
+      const res = await fetch(`${API}/check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      showResult(data);
+      addToHistory(data);
+      loadStats();
+    } catch(e) {
+      showError('Cannot connect to API. Make sure your server is running!');
+    }
+    showLoading(false);
+  }
+
+  async function checkEmail() {
+    const subject = document.getElementById('emailSubject').value.trim();
+    const body = document.getElementById('emailBody').value.trim();
+    const sender = document.getElementById('emailSender').value.trim();
+    if (!subject && !body) { alert('Please enter email subject or body'); return; }
+    showLoading(true);
+    try {
+      const res = await fetch(`${API}/check-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, body, sender })
+      });
+      const data = await res.json();
+      showEmailResult(data);
+      loadStats();
+    } catch(e) {
+      showError('Cannot connect to API. Make sure your server is running!');
+    }
+    showLoading(false);
+  }
+
+  function showResult(data) {
+    const box = document.getElementById('result');
+    const isPhishing = data.is_phishing;
+    box.className = `result-box ${isPhishing ? 'phishing' : 'safe'}`;
+    box.style.display = 'block';
+
+    const reasons = data.reasons || [];
+    const reasonsHTML = reasons.map(r =>
+      `<div class="reason-item">
+        <span class="reason-icon">${isPhishing ? '⚠️' : '✅'}</span>
+        <span>${r}</span>
+      </div>`
+    ).join('');
+
+    box.innerHTML = `
+      <div class="result-header">
+        <div>
+          <div class="result-verdict ${isPhishing ? 'danger' : 'safe'}">
+            ${isPhishing ? '🚨 PHISHING DETECTED' : '✅ SAFE'}
+          </div>
+          <span class="risk-badge risk-${data.risk_level}">${data.risk_level} RISK</span>
+        </div>
+        <div class="result-confidence">
+          Confidence
+          <span>${data.confidence}</span>
+        </div>
+      </div>
+      <div class="reasons-title">Analysis Details</div>
+      ${reasonsHTML}
+      <div class="features-info">
+        Analyzed ${data.features_analyzed} security features · ${new Date().toLocaleTimeString()}
+      </div>
+    `;
+  }
+
+  function showEmailResult(data) {
+    const box = document.getElementById('result');
+    const isPhishing = data.is_phishing;
+    box.className = `result-box ${isPhishing ? 'phishing' : 'safe'}`;
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div class="result-header">
+        <div>
+          <div class="result-verdict ${isPhishing ? 'danger' : 'safe'}">
+            ${isPhishing ? '🚨 PHISHING EMAIL' : '✅ SAFE EMAIL'}
+          </div>
+        </div>
+        <div class="result-confidence">
+          Risk Score
+          <span>${data.risk_score}/100</span>
+        </div>
+      </div>
+      <div class="reasons-title">Email Analysis</div>
+      <div class="reason-item">
+        <span>🔑</span>
+        <span>Suspicious keywords found: ${data.suspicious_keywords?.length || 0}</span>
+      </div>
+      <div class="reason-item">
+        <span>🔗</span>
+        <span>URLs in email: ${data.urls_found || 0} (${data.phishing_urls || 0} phishing)</span>
+      </div>
+      ${(data.suspicious_keywords || []).map(k =>
+        `<div class="reason-item" style="padding-left:20px">
+          <span>⚠️</span><span>${k}</span>
+        </div>`
+      ).join('')}
+    `;
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('result');
+    box.className = 'result-box phishing';
+    box.style.display = 'block';
+    box.innerHTML = `<div style="color:#ff4f4f">❌ Error: ${msg}</div>`;
+  }
+
+  function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'block' : 'none';
+    document.getElementById('urlBtn').disabled = show;
+    document.getElementById('emailBtn').disabled = show;
+    if (show) document.getElementById('result').style.display = 'none';
+  }
+
+  function addToHistory(data) {
+    scanHistory.unshift(data);
+    if (scanHistory.length > 20) scanHistory.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    if (!scanHistory.length) {
+      list.innerHTML = '<div class="empty-history">No scans yet!</div>';
+      return;
+    }
+    list.innerHTML = scanHistory.map(item => `
+      <div class="history-row">
+        <div class="history-url" title="${item.url}">${item.url}</div>
+        <div>
+          <span class="badge ${item.is_phishing ? 'phishing' : 'safe'}">
+            ${item.result}
+          </span>
+        </div>
+        <div class="history-conf">${item.confidence}</div>
+        <div class="history-time">
+          ${new Date(item.scanned_at).toLocaleTimeString()}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function loadStats() {
+    try {
+      const res = await fetch(`${API}/stats`);
+      const data = await res.json();
+      if (data.total_scans) {
+        document.getElementById('statTotal').textContent = data.total_scans;
+        document.getElementById('statPhishing').textContent = data.phishing_detected;
+        document.getElementById('statSafe').textContent = data.safe_urls;
+      }
+    } catch(e) {}
+  }
+
+  function scrollToScanner() {
+    document.getElementById('scanner').scrollIntoView({ behavior: 'smooth' });
+  }
+  function scrollToHistory() {
+    document.getElementById('historySection').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Load stats on startup
+  loadStats();
+</script>
+</body>
+</html>

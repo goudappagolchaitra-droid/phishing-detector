@@ -1,6 +1,16 @@
-VIRUSTOTAL_API_KEY = "f9c2f725adab651cfe7b497f8e2f073c03eb45dcaae0b006c93e6c3e546b104d"
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import pandas as pd
+import numpy as np
+import joblib
+import sys
+import os
+from datetime import datetime
 import requests
 import time
+VIRUSTOTAL_API_KEY = "f9c2f725adab651cfe7b497f8e2f073c03eb45dcaae0b006c93e6c3e546b104d"
+
 
 VIRUSTOTAL_API_KEY = "paste_your_api_key_here"
 
@@ -38,16 +48,6 @@ def check_virustotal(url):
         }
     except Exception:
         return None
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import pandas as pd
-import numpy as np
-import joblib
-import sys
-import os
-from datetime import datetime
-
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from feature_extractor import extract_features, FEATURE_NAMES
 

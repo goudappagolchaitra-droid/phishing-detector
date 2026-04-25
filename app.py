@@ -1,3 +1,43 @@
+VIRUSTOTAL_API_KEY = "f9c2f725adab651cfe7b497f8e2f073c03eb45dcaae0b006c93e6c3e546b104d"
+import requests
+import time
+
+VIRUSTOTAL_API_KEY = "paste_your_api_key_here"
+
+def check_virustotal(url):
+    try:
+        headers = {"x-apikey": VIRUSTOTAL_API_KEY}
+        response = requests.post(
+            "https://www.virustotal.com/api/v3/urls",
+            headers=headers,
+            data={"url": url},
+            timeout=10
+        )
+        if response.status_code != 200:
+            return None
+        scan_id = response.json()["data"]["id"]
+        time.sleep(3)
+        result = requests.get(
+            f"https://www.virustotal.com/api/v3/analyses/{scan_id}",
+            headers=headers,
+            timeout=10
+        )
+        if result.status_code != 200:
+            return None
+        stats = result.json()["data"]["attributes"]["stats"]
+        malicious = stats.get("malicious", 0)
+        suspicious = stats.get("suspicious", 0)
+        harmless = stats.get("harmless", 0)
+        total = malicious + suspicious + harmless
+        return {
+            "malicious": malicious,
+            "suspicious": suspicious,
+            "harmless": harmless,
+            "total_engines": total,
+            "is_malicious": malicious > 0 or suspicious > 2
+        }
+    except Exception:
+        return None
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel

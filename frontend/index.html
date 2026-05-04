@@ -530,6 +530,12 @@
 </footer>
 
 <script>
+  // Ping Render every 10 minutes to keep it awake
+setInterval(async () => {
+  try {
+    await fetch('https://phishing-detector-rp57.onrender.com');
+  } catch(e) {}
+}, 600000);
   const API = 'https://phishing-detector-rp57.onrender.com';
   let scanHistory = [];
   let currentTab = 'url';
@@ -721,6 +727,13 @@ function showResult(data) {
 
   // Load stats on startup
   loadStats();
+  // Keep Render server awake 24/7
+  setInterval(async () => {
+    try {
+      await fetch('https://phishing-detector-rp57.onrender.com');
+      console.log('Server pinged - staying awake!');
+    } catch(e) {}
+  }, 600000);
 </script>
 </body>
 </html>
